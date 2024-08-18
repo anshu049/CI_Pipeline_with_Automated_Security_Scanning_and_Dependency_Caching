@@ -44,13 +44,20 @@ def filter_new_findings(existing_findings, new_findings):
         print('Existing findings are not in the expected list format')
         return []
     
-    existing_ids = {finding['id'] for finding in existing_findings}
-    filtered_findings = [finding for finding in new_findings if finding['id'] not in existing_ids]
+    existing_ids = {finding.get('id') for finding in existing_findings if 'id' in finding}
+    filtered_findings = [finding for finding in new_findings if 'id' in finding and finding['id'] not in existing_ids]
+    
+    if not filtered_findings:
+        print('No new findings to import')
     return filtered_findings
 
 # Read new findings from the file
 with open(file_name, 'r') as file:
     new_findings = json.load(file)
+
+# Debug: Print the type and content of new_findings
+print(f'Type of new_findings: {type(new_findings)}')
+print(f'Content of new_findings: {new_findings}')
 
 # Get existing findings
 existing_findings = get_existing_findings()
