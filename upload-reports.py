@@ -17,6 +17,9 @@ elif file_name == 'semgrep.json':
     scan_type = 'Semgrep JSON Report'
 elif file_name == 'retirejsscan.json':
     scan_type = 'Retire.js Scan'
+else:
+    print('Unknown file type')
+    sys.exit(1)
 
 headers = {
     'Authorization': f'Token {API_KEY}',
@@ -43,21 +46,57 @@ def filter_new_findings(existing_findings, new_findings):
     if not isinstance(existing_findings, list):
         print('Existing findings are not in the expected list format')
         return []
-    
+
     existing_ids = {finding.get('id') for finding in existing_findings if 'id' in finding}
     
-    # Adjust the filtering based on the format of new_findings
     filtered_findings = []
-    for finding in new_findings:
-        if isinstance(finding, dict):
-            if 'id' in finding and finding['id'] not in existing_ids:
+    
+    if isinstance(new_findings, list):
+        # Handle Gitleaks
+        for finding in new_findings:
+            if 'Fingerprint' in finding and finding['Fingerprint'] not in existing_ids:
                 filtered_findings.append(finding)
-        elif isinstance(finding, list):
-            for item in finding:
-                if 'id' in item and item['id'] not in existing_ids:
-                    filtered_findings.append(item)
+    elif isinstance(new_findings, dict):
+        if 'runs' in new_findings:
+            # Handle SARIF (NodeJSScan)
+            for run in new_findings['runs']:
+                for result in run.get('results', []):
+                    finding = {
+                        'id': result['ruleId'],
+                        'description': result['message']['text'],
+                        'file': result['locations'][0]['physicalLocation']['artifactLocation']['uri'],
+                        'line': result['locations'][0]['physicalLocation']['region']['startLine']
+                    }
+                    if finding['id'] not in existing_ids:
+                        filtered_findings.append(finding)
+        elif 'errors' in new_findings:
+            # Handle Semgrep
+            for error in new_findings['errors']:
+                finding = {
+                    'id': error.get('message', 'unknown'),
+                    'description': error.get('message', ''),
+                    'file': error.get('path', ''),
+                    'line': error.get('spans', [{}])[0].get('start', {}).get('line', 0)
+                }
+                if finding['id'] not in existing_ids:
+                    filtered_findings.append(finding)
+        elif 'data' in new_findings:
+            # Handle Retire.js
+            for item in new_findings['data']:
+                for result in item.get('results', []):
+                    for vuln in result.get('vulnerabilities', []):
+                        finding = {
+                            'id': vuln.get('identifiers', {}).get('CVE', ['unknown'])[0],
+                            'description': vuln.get('identifiers', {}).get('summary', ''),
+                            'file': item.get('file', ''),
+                            'line': 0  # Retire.js doesn't provide line numbers
+                        }
+                        if finding['id'] not in existing_ids:
+                            filtered_findings.append(finding)
         else:
-            print(f'Unexpected format in new_findings: {finding}')
+            print(f'Unexpected format in new_findings: {new_findings}')
+    else:
+        print(f'Unexpected format in new_findings: {new_findings}')
     
     if not filtered_findings:
         print('No new findings to import')
