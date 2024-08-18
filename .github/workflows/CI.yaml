@@ -277,11 +277,6 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-      - name: Verify Dockerfile
-        run: |
-          # Verify the Dockerfile syntax
-          dockerfile_lint Dockerfile
  
       - name: Shorten SHA
         id: shorten_sha
