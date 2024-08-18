@@ -45,7 +45,19 @@ def filter_new_findings(existing_findings, new_findings):
         return []
     
     existing_ids = {finding.get('id') for finding in existing_findings if 'id' in finding}
-    filtered_findings = [finding for finding in new_findings if 'id' in finding and finding['id'] not in existing_ids]
+    
+    # Adjust the filtering based on the format of new_findings
+    filtered_findings = []
+    for finding in new_findings:
+        if isinstance(finding, dict):
+            if 'id' in finding and finding['id'] not in existing_ids:
+                filtered_findings.append(finding)
+        elif isinstance(finding, list):
+            for item in finding:
+                if 'id' in item and item['id'] not in existing_ids:
+                    filtered_findings.append(item)
+        else:
+            print(f'Unexpected format in new_findings: {finding}')
     
     if not filtered_findings:
         print('No new findings to import')
