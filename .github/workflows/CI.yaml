@@ -103,6 +103,7 @@ jobs:
   GitLeaks:
     name: Run GitLeaks
     runs-on: ubuntu-latest
+    needs: Cache
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
@@ -125,6 +126,7 @@ jobs:
   Nodejsscan:
     name: Run Nodejsscan
     runs-on: ubuntu-latest
+    needs: Cache
     steps:
     - name: Checkout the code
       uses: actions/checkout@v3
@@ -149,6 +151,7 @@ jobs:
   Semgrep:
     name: Run Semgrep
     runs-on: ubuntu-latest
+    needs: Cache
     container: 
       image: semgrep/semgrep:latest
     steps:
@@ -261,7 +264,7 @@ jobs:
     name: Build and Push Docker Image
     if: always()
     runs-on: ubuntu-latest
-    needs: [GitLeaks, Nodejsscan, Semgrep, UploadReports]
+    needs: UploadReports
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
