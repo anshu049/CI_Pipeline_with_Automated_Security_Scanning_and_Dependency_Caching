@@ -1,13 +1,12 @@
 import requests
 import sys
 import json
+import os
 
-# Configuration
-DOJO_URL = 'http://20.42.57.168:8080/api/v2'  # DefectDojo URL
-API_KEY = '6fc6300d17a08a9040f5b429bf74292e2cd1a288'  # API Key
-ENGAGEMENT_ID = 3  # Engagement ID
-
+# Get file name from command line arguments
 file_name = sys.argv[1]
+
+# Determine scan type based on file name
 scan_type = ''
 if file_name == 'gitleaks.json':
     scan_type = 'Gitleaks Scan'
@@ -17,126 +16,61 @@ elif file_name == 'semgrep.json':
     scan_type = 'Semgrep JSON Report'
 elif file_name == 'retirejsscan.json':
     scan_type = 'Retire.js Scan'
-else:
-    print('Unknown file type')
-    sys.exit(1)
+# ... other conditions
 
+# Define headers and URL for DefectDojo API
 headers = {
-    'Authorization': f'Token {API_KEY}',
-    'Content-Type': 'application/json'
+    'Authorization': 'Token 6fc6300d17a08a9040f5b429bf74292e2cd1a288'
+}
+url = 'http://20.42.57.168:8080/api/v2'
+
+# Define the engagement ID and data for the request
+engagement_id = 3
+data = {
+    'active': True,
+    'verified': True,
+    'scan_type': scan_type,
+    'minimum_severity': 'Low',
+    'engagement': engagement_id
 }
 
-# Function to get existing findings
-def get_existing_findings():
-    url = f'{DOJO_URL}/findings/'
-    response = requests.get(url, headers=headers)
-    if response.status_code == 200:
-        try:
-            data = response.json()  # Assuming the API returns JSON data
-            return data.get('results', [])  # Extract findings from the 'results' key
-        except json.JSONDecodeError:
-            print('Failed to decode JSON from response')
-            return []
-    else:
-        print(f'Failed to get existing findings: {response.content}')
-        return []
+# File to track previously uploaded fingerprints
+fingerprints_file = 'uploaded_fingerprints.json'
 
-# Function to filter new findings
-def filter_new_findings(existing_findings, new_findings):
-    if not isinstance(existing_findings, list):
-        print('Existing findings are not in the expected list format')
-        return []
+# Load previously uploaded fingerprints if the file exists
+if os.path.exists(fingerprints_file):
+    with open(fingerprints_file, 'r') as f:
+        uploaded_fingerprints = set(json.load(f))
+else:
+    uploaded_fingerprints = set()
 
-    existing_ids = {finding.get('id') for finding in existing_findings if 'id' in finding}
-    
-    filtered_findings = []
-    
-    if isinstance(new_findings, list):
-        # Handle Gitleaks
-        for finding in new_findings:
-            if 'Fingerprint' in finding and finding['Fingerprint'] not in existing_ids:
-                filtered_findings.append(finding)
-    elif isinstance(new_findings, dict):
-        if 'runs' in new_findings:
-            # Handle SARIF (NodeJSScan)
-            for run in new_findings['runs']:
-                for result in run.get('results', []):
-                    finding = {
-                        'id': result['ruleId'],
-                        'description': result['message']['text'],
-                        'file': result['locations'][0]['physicalLocation']['artifactLocation']['uri'],
-                        'line': result['locations'][0]['physicalLocation']['region']['startLine']
-                    }
-                    if finding['id'] not in existing_ids:
-                        filtered_findings.append(finding)
-        elif 'errors' in new_findings:
-            # Handle Semgrep
-            for error in new_findings['errors']:
-                finding = {
-                    'id': error.get('message', 'unknown'),
-                    'description': error.get('message', ''),
-                    'file': error.get('path', ''),
-                    'line': error.get('spans', [{}])[0].get('start', {}).get('line', 0)
-                }
-                if finding['id'] not in existing_ids:
-                    filtered_findings.append(finding)
-        elif 'data' in new_findings:
-            # Handle Retire.js
-            for item in new_findings['data']:
-                for result in item.get('results', []):
-                    for vuln in result.get('vulnerabilities', []):
-                        finding = {
-                            'id': vuln.get('identifiers', {}).get('CVE', ['unknown'])[0],
-                            'description': vuln.get('identifiers', {}).get('summary', ''),
-                            'file': item.get('file', ''),
-                            'line': 0  # Retire.js doesn't provide line numbers
-                        }
-                        if finding['id'] not in existing_ids:
-                            filtered_findings.append(finding)
-        else:
-            print(f'Unexpected format in new_findings: {new_findings}')
-    else:
-        print(f'Unexpected format in new_findings: {new_findings}')
-    
-    if not filtered_findings:
-        print('No new findings to import')
-    return filtered_findings
-
-# Read new findings from the file
+# Read new scan results
 with open(file_name, 'r') as file:
     new_findings = json.load(file)
 
-# Debug: Print the type and content of new_findings
-print(f'Type of new_findings: {type(new_findings)}')
-print(f'Content of new_findings: {new_findings}')
+# Prepare new findings for upload
+new_findings_to_upload = []
 
-# Get existing findings
-existing_findings = get_existing_findings()
+for finding in new_findings:
+    # Use the 'Fingerprint' field for uniqueness
+    fingerprint = finding.get('Fingerprint')
+    if fingerprint:
+        if fingerprint not in uploaded_fingerprints:
+            new_findings_to_upload.append(finding)
+        uploaded_fingerprints.add(fingerprint)
 
-# Debug: Print the type and content of existing_findings
-print(f'Type of existing_findings: {type(existing_findings)}')
-print(f'Content of existing_findings: {existing_findings}')
-
-# Filter new findings
-filtered_findings = filter_new_findings(existing_findings, new_findings)
-
-# Import filtered findings
-if filtered_findings:
-    url = f'{DOJO_URL}/import-scan/'
-    data = {
-        'active': True,
-        'verified': True,
-        'scan_type': scan_type,
-        'minimum_severity': 'Low',
-        'engagement': ENGAGEMENT_ID
-    }
+if not new_findings_to_upload:
+    print('No new findings to upload.')
+else:
     files = {
-        'file': open(file_name, 'rb')
+        'file': ('scan_results.json', json.dumps(new_findings_to_upload), 'application/json')
     }
     response = requests.post(url, headers=headers, data=data, files=files)
     if response.status_code == 201:
         print('Scan results imported successfully')
+        
+        # Update the fingerprints file with new fingerprints
+        with open(fingerprints_file, 'w') as f:
+            json.dump(list(uploaded_fingerprints), f)
     else:
         print(f'Failed to import scan results: {response.content}')
-else:
-    print('No new findings to import')
