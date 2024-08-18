@@ -38,18 +38,19 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-yarn-
 
-      - name: Install Angular CLI
-        run: yarn global add @angular/cli
-
       - name: Install Dependencies
         run: yarn install
 
+      - name: Install Angular CLI
+        run: yarn global add @angular/cli
+
+      - name: Install Karma
+        run: yarn add karma --dev
+
       - name: Run Tests
-        run: yarn test
+        run: cd frontend && ng test --watch=false --source-map=true && cd .. && npm run test:server
 
      
- 
-  
 
   # https://github.com/gitleaks  
   GitLeaks:
