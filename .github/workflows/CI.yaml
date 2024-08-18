@@ -242,21 +242,18 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: Retirejsscan-report
-      
+
       - name: Set Up Python
         uses: actions/setup-python@v3
         with:
           python-version: '3.x'
 
       - name: Install Requests Library
-        run: pip3 install requests
+        run: pip install requests
 
       - name: Run Upload Script
         run: |
-          python3 upload-reports.py gitleaks.json
-          python3 upload-reports.py nodejsscan.sarif
-          python3 upload-reports.py semgrep.json
-          python3 upload-reports.py retirejsscan.json
+          python3 upload-reports.py
 
 
 
