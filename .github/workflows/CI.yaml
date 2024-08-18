@@ -129,7 +129,7 @@ jobs:
     needs: Test
     steps:
     - name: Checkout the code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Run Nodejsscan Scan
       id: njsscan
@@ -194,11 +194,6 @@ jobs:
           key: ${{ needs.Cache.outputs.cache-key }}
           restore-keys: |
             ${{ runner.os }}-yarn-
-
-      - name: Install Retire.js and Dependencies
-        run: |
-          yarn install
-          npm install -g retire
 
       - name: Install Retire.js and Dependencies
         run: |
@@ -282,6 +277,11 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Verify Dockerfile
+        run: |
+          # Verify the Dockerfile syntax
+          dockerfile_lint Dockerfile
  
       - name: Shorten SHA
         id: shorten_sha
