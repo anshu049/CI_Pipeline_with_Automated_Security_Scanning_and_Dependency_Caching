@@ -29,7 +29,8 @@ def get_existing_findings():
     response = requests.get(url, headers=headers)
     if response.status_code == 200:
         try:
-            return response.json()  # Assuming the API returns JSON data
+            data = response.json()  # Assuming the API returns JSON data
+            return data.get('results', [])  # Extract findings from the 'results' key
         except json.JSONDecodeError:
             print('Failed to decode JSON from response')
             return []
