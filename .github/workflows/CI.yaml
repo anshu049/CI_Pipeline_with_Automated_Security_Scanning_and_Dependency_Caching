@@ -1,0 +1,232 @@
+name: CI Workflow
+
+env:
+  IMAGE_NAME: anshu049/juiceapp
+  IMAGE_TAG: 1.1
+
+on:
+  push:
+    branches:
+      - Build_CI
+  pull_request:
+    branches:
+      - Build_CI
+
+
+      
+jobs:
+  Test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set Up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22
+
+      - name: Cache Node Modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            node_modules
+            yarn.lock
+            .yarn
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
+      - name: Install Dependencies
+        run: yarn install
+
+      - name: Run Tests
+        run: yarn test
+
+  
+
+  # https://github.com/gitleaks  
+  GitLeaks:
+    name: Run GitLeaks
+    runs-on: ubuntu-latest
+    needs: Test
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Run Gitleaks Scan
+      run: |
+        docker run --rm -v ${{ github.workspace }}:/repo -w /repo zricethezav/gitleaks:latest detect --verbose --source . -f json -r gitleaks.json
+      continue-on-error: true
+
+    - name: Upload Gitleaks Report
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: Gitleaks-report
+        path: gitleaks.json
+
+
+        
+  # https://github.com/marketplace/actions/nodejsscan
+  Nodejsscan:
+    name: Run Nodejsscan
+    runs-on: ubuntu-latest
+    needs: Test
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v2
+
+    - name: Run Nodejsscan Scan
+      id: njsscan
+      uses: ajinabraham/njsscan-action@master
+      with:
+        args: '. --sarif --output nodejsscan.sarif'
+      continue-on-error: true
+
+    - name: Upload SARIF report
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: Nodejsscan-report
+        path: nodejsscan.sarif
+  
+        
+
+  # https://semgrep.dev/docs/semgrep-ci/sample-ci-configs#github-actions
+  Semgrep:
+    name: Run Semgrep
+    runs-on: ubuntu-latest
+    needs: Test
+    container: 
+      image: semgrep/semgrep:latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Run Semgrep Scan
+        run: semgrep scan --config auto --json-output semgrep.json
+        continue-on-error: true
+
+      - name: Upload Semgrep Report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: Semgrep-report
+          path: semgrep.json
+
+
+
+  Retirejsscan:
+    name: Run Retirejsscan
+    runs-on: ubuntu-latest
+    needs: Test
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set Up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22
+
+      - name: Cache Node Modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            node_modules
+            yarn.lock
+            .yarn
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
+      - name: Install Retire.js and Dependencies
+        run: |
+          yarn install
+          npm install -g retire
+
+      - name: Run Retire.js Scan
+        run: |
+          retire --outputformat json --outputpath retire-output.json || true
+        continue-on-error: true
+
+      - name: Upload Retire.js Report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: Retirejsscan-report
+          path: retirejsscan.json    
+
+
+
+  UploadReports:
+    name: Upload Reports
+    if: always()
+    runs-on: ubuntu-latest
+    needs: [GitLeaks, Nodejsscan, Semgrep, Retirejsscan]
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Download GitLeaks Report
+        uses: actions/download-artifact@v3
+        with:
+          name: Gitleaks-report
+
+      - name: Download Nodejsscan Report
+        uses: actions/download-artifact@v3
+        with:
+          name: Nodejsscan-report
+
+      - name: Download Semgrep Report
+        uses: actions/download-artifact@v3
+        with:
+          name: Semgrep-report
+
+      - name: Download Semgrep Report
+        uses: actions/download-artifact@v3
+        with:
+          name: Retirejsscan-report
+      
+      - name: Set Up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.x'
+
+      - name: Install Requests Library
+        run: pip3 install requests
+
+      - name: Run Upload Script
+        run: |
+          python3 upload-reports.py gitleaks.json
+          python3 upload-reports.py nodejsscan.sarif
+          python3 upload-reports.py semgrep.json
+          python3 upload-reports.py retirejsscan.json
+
+
+
+  Build:
+    name: Build and Push Docker Image
+    if: always()
+    runs-on: ubuntu-latest
+    needs: [GitLeaks, Nodejsscan, Semgrep, UploadReports]
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set Up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log In to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Build and Push Docker Image
+        run: |
+          docker build -t ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}-${{ github.sha }} .
+          docker push ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}-${{ github.sha }}
