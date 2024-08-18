@@ -51,7 +51,11 @@ jobs:
           fi
 
       - name: Run Tests
-        run: cd frontend && ng test --watch=false --source-map=true && cd .. && npm run test:server
+        run: |
+          cd frontend
+          ng test --watch=false --source-map=true --browsers=ChromeHeadless
+          cd ..
+          npm run test:server
 
      
 
