@@ -28,13 +28,21 @@ def get_existing_findings():
     url = f'{DOJO_URL}/findings/'
     response = requests.get(url, headers=headers)
     if response.status_code == 200:
-        return response.json()  # Assuming the API returns JSON data
+        try:
+            return response.json()  # Assuming the API returns JSON data
+        except json.JSONDecodeError:
+            print('Failed to decode JSON from response')
+            return []
     else:
         print(f'Failed to get existing findings: {response.content}')
         return []
 
 # Function to filter new findings
 def filter_new_findings(existing_findings, new_findings):
+    if not isinstance(existing_findings, list):
+        print('Existing findings are not in the expected list format')
+        return []
+    
     existing_ids = {finding['id'] for finding in existing_findings}
     filtered_findings = [finding for finding in new_findings if finding['id'] not in existing_ids]
     return filtered_findings
@@ -45,6 +53,10 @@ with open(file_name, 'r') as file:
 
 # Get existing findings
 existing_findings = get_existing_findings()
+
+# Debug: Print the type and content of existing_findings
+print(f'Type of existing_findings: {type(existing_findings)}')
+print(f'Content of existing_findings: {existing_findings}')
 
 # Filter new findings
 filtered_findings = filter_new_findings(existing_findings, new_findings)
