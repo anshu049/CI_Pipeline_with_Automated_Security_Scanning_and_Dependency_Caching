@@ -230,41 +230,9 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-      - name: Shorten SHA
-        id: shorten_sha
-        run: |
-          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-8)
-          echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_ENV
-
-      - name: Print IMAGE_NAME
-        run: echo "IMAGE_NAME=${{ env.IMAGE_NAME }}"
-
-      - name: Cache Docker layers
-        uses: actions/cache@v3
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
-
-      - name: Prune Docker Build Cache
-        run: docker builder prune --all --force
-
       - name: Build Docker Image
         run: |
-          docker buildx build --load \
-                              --cache-from=type=local,src=/tmp/.buildx-cache \
-                              --cache-to=type=local,dest=/tmp/.buildx-cache-new \
-                              -t ${{ env.IMAGE_NAME }}:${{ github.sha }} .
-
-      - name: Save Cache
-        if: success()
-        uses: actions/cache@v3
-        with:
-          path: /tmp/.buildx-cache-new
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
+          docker build -t $REPOSITORY_TAG1 .
 
 
 
@@ -299,7 +267,7 @@ jobs:
       - name: Push Docker Image
         if: always()
         run: |
-          docker push ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          docker push $REPOSITORY_TAG1
 
 
 
