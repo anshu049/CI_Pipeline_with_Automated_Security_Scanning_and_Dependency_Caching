@@ -174,7 +174,7 @@ jobs:
   Retirejsscan:
     name: Run Retirejsscan
     runs-on: ubuntu-latest
-    needs: Test
+    needs: Cache
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
