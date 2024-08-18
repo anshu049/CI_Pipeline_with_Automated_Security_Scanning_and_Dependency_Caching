@@ -33,6 +33,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-yarn-
 
+      - name: Install Angular CLI
+        run: yarn global add @angular/cli
+
       - name: Install dependencies
         run: yarn install
 
