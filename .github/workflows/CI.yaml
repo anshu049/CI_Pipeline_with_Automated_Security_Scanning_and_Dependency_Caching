@@ -22,11 +22,6 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Set Up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-
       - name: Cache Node Modules
         uses: actions/cache@v3
         with:
@@ -38,15 +33,24 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-yarn-
 
-      - name: Install Angular CLI
-        run: npm install -g @angular/cli
-
-      - name: Install Dependencies
+      - name: Install dependencies
         run: yarn install
 
-      - name: Run Tests
-        run: yarn test
+      - name: Run API tests
+        run: yarn test --api
 
+      - name: Run Cypress tests
+        run: yarn test --cypress
+
+      - name: Run Files tests
+        run: yarn test --files
+
+      - name: Run Server tests
+        run: yarn test --server
+
+      - name: Run Smoke tests
+        run: yarn test --smoke
+ 
   
 
   # https://github.com/gitleaks  
@@ -129,11 +133,6 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
-
-      - name: Set Up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
 
       - name: Cache Node Modules
         uses: actions/cache@v3
