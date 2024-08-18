@@ -5,7 +5,7 @@ import sys
 # Replace these variables with your DefectDojo configuration
 DOJO_URL = "http://20.42.57.168:8080/api/v2"
 API_KEY = "6fc6300d17a08a9040f5b429bf74292e2cd1a288"
-ENGAGEMENT_ID = 1  # Replace with your engagement ID
+ENGAGEMENT_ID = 2  # Replace with your engagement ID
 
 HEADERS = {
     'Authorization': f'Token {API_KEY}',
