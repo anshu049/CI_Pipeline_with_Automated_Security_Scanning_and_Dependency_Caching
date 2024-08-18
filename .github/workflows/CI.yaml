@@ -44,8 +44,11 @@ jobs:
       - name: Install Angular CLI
         run: yarn global add @angular/cli
 
-      - name: Install Karma
-        run: yarn add karma --dev
+      - name: Generate Karma Config (if missing)
+        run: |
+          if [ ! -f frontend/karma.conf.js ]; then
+            cd frontend && ng generate config karma
+          fi
 
       - name: Run Tests
         run: cd frontend && ng test --watch=false --source-map=true && cd .. && npm run test:server
