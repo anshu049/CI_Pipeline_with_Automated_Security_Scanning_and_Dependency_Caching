@@ -5,17 +5,17 @@ import json
 # Configuration
 DOJO_URL = 'http://20.42.57.168:8080/api/v2'  # DefectDojo URL
 API_KEY = '6fc6300d17a08a9040f5b429bf74292e2cd1a288'  # API Key
-ENGAGEMENT_ID = 2  # Engagement ID
+ENGAGEMENT_ID = 3  # Engagement ID
 
 file_name = sys.argv[1]
 scan_type = ''
 if file_name == 'gitleaks.json':
     scan_type = 'Gitleaks Scan'
-elif file_name == 'njsscan.sarif':
+elif file_name == 'nodejsscan.sarif':
     scan_type = 'SARIF'
 elif file_name == 'semgrep.json':
     scan_type = 'Semgrep JSON Report'
-elif file_name == 'retire.json':
+elif file_name == 'retirejsscan.json':
     scan_type = 'Retire.js Scan'
 
 headers = {
