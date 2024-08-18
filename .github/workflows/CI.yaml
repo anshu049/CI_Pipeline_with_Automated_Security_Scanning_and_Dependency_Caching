@@ -53,7 +53,14 @@ jobs:
       - name: Run Tests
         run: |
           cd frontend
-          ng test --watch=false --source-map=true --browsers=ChromeHeadless
+          # Update Karma config to run Chrome in headless mode
+          if grep -q 'browsers:' karma.conf.js; then
+            sed -i 's/browsers: .*/browsers: ["ChromeHeadless"],/' karma.conf.js
+          else
+            echo 'browsers: ["ChromeHeadless"],' >> karma.conf.js
+          fi
+          # Run tests
+          ng test --watch=false --source-map=true
           cd ..
           npm run test:server
 
