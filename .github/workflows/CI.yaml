@@ -244,6 +244,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildx-
 
+      - name: Prune Docker Build Cache
+        run: docker builder prune --all --force
+
       - name: Build Docker Image
         run: |
           docker buildx build --load \
