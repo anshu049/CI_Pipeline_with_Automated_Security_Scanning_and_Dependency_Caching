@@ -7,10 +7,10 @@ env:
 on:
   push:
     branches:
-      - Build_CI
+      - master
   pull_request:
     branches:
-      - Build_CI
+      - master
 
 
       
@@ -230,3 +230,5 @@ jobs:
         run: |
           docker build -t ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}-${{ github.sha }} .
           docker push ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}-${{ github.sha }}
+
+
