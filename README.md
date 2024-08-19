@@ -4,6 +4,11 @@ This repository contains a comprehensive Continuous Integration (CI) workflow de
 
 ![Screenshot 2024-08-20 at 3 34 41 AM](https://github.com/user-attachments/assets/f98f7c43-678c-491a-acfb-262fcefb5ff1)
 
+## Vulnerability Management on DefectDojo
+
+![Screenshot 2024-08-20 at 3 36 57 AM](https://github.com/user-attachments/assets/1d600a67-0761-4ff5-a31d-86c76913f4fc)
+
+
 
 ## Workflow Overview
 
