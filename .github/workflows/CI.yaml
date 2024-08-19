@@ -1,8 +1,5 @@
 name: CI Workflow
 
-env:
-  IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/juiceapp
-
 on:
   push:
     branches:
