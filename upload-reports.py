@@ -20,7 +20,7 @@ headers = {
     'Authorization': 'Token 6fc6300d17a08a9040f5b429bf74292e2cd1a288'
 }
 
-url = 'http://20.42.57.168:8080/api/v2'
+url = 'http://20.42.57.168:8080/api/v2/import-scan/'
 
 data = {
     'active': True,
