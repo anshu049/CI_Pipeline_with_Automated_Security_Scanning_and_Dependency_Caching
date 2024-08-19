@@ -253,6 +253,9 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
+      - name: Debug image-ref
+        run: echo "IMAGE_REF=${{ needs.Build.outputs.image_name }}:${{ needs.Build.outputs.image_tag }}"
+
       - name: Run Trivy Vulnerability Scanner
         uses: aquasecurity/trivy-action@0.20.0
         with:
