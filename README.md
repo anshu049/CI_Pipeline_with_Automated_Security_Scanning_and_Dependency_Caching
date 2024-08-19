@@ -2,6 +2,9 @@
 
 This repository contains a comprehensive Continuous Integration (CI) workflow designed to automate the testing, security scanning, and report generation for Node.js applications. The workflow uses GitHub Actions to streamline the development process and ensure code quality through a series of automated steps.
 
+![Screenshot 2024-08-20 at 3 34 41 AM](https://github.com/user-attachments/assets/f98f7c43-678c-491a-acfb-262fcefb5ff1)
+
+
 ## Workflow Overview
 
 The CI workflow is organized into several jobs, each responsible for a specific aspect of the CI process. The jobs include:
