@@ -229,8 +229,7 @@ jobs:
       - name: Set up environment variables
         run: |
           echo "IMAGE_NAME=${{ secrets.DOCKERHUB_USERNAME }}/owasp-juiceapp" >> $GITHUB_ENV
-          SHORT_SHA=${{ github.sha }}
-          echo "IMAGE_TAG=${SHORT_SHA::7}" >> $GITHUB_ENV
+          echo "IMAGE_TAG=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
 
       - name: Build Docker Image
         run: |
@@ -264,7 +263,6 @@ jobs:
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
-        continue-on-error: true
 
       - name: Upload Trivy Report
         if: always()
