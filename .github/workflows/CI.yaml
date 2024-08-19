@@ -213,9 +213,6 @@ jobs:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
     needs: [GitLeaks, Nodejsscan, Semgrep, Retirejsscan]
-    outputs:
-      image_name: ${{ steps.set_env.outputs.image_name }}
-      image_tag: ${{ steps.set_env.outputs.image_tag }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -227,6 +224,17 @@ jobs:
           IMAGE_TAG=$(echo ${{ github.sha }} | cut -c1-7)
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+
+      - name: Create .env file
+        run: |
+          echo "IMAGE_NAME=${{ secrets.DOCKERHUB_USERNAME }}/owasp-juiceapp" > .env
+          echo "IMAGE_TAG=$(echo ${{ github.sha }} | cut -c1-7)" >> .env
+
+      - name: Save Environment Variables
+        uses: actions/upload-artifact@v3
+        with:
+          name: env-vars
+          path: .env
 
       - name: Log in to DockerHub
         uses: docker/login-action@v2
@@ -250,6 +258,8 @@ jobs:
             --push \
             .
 
+            
+
   Trivy:
     name: Run Trivy Vulnerability Scanner
     runs-on: ubuntu-latest
@@ -258,20 +268,28 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Pull Docker Image from DockerHub
+      - name: Download Environment Variables
+        uses: actions/download-artifact@v3
+        with:
+          name: env-vars
+
+      - name: Load Environment Variables
         run: |
-          docker pull $IMAGE_NAME:$IMAGE_TAG
+          set -o allexport
+          source .env
+          set +o allexport
 
       - name: Run Trivy Vulnerability Scanner
         uses: aquasecurity/trivy-action@0.20.0
         with:
-          image-ref: '$IMAGE_NAME:$IMAGE_TAG'
+          image-ref: 'docker.io/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}'
           format: 'json'
           output: 'trivy.json'
           exit-code: '1'
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
+      
       - name: Upload Trivy Report
         if: always()
         uses: actions/upload-artifact@v3
