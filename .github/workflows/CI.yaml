@@ -282,7 +282,7 @@ jobs:
       - name: Run Trivy Vulnerability Scanner
         uses: aquasecurity/trivy-action@0.20.0
         with:
-          image-ref: "docker.io/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
+          image-ref: "anshu049/owasp-juiceapp@sha256:4231e4df40ffdf1c4969d30b95e0f628da8877d210aae37dd35eb9306da94c8e"
           format: 'json'
           output: 'trivy.json'
           exit-code: '1'
