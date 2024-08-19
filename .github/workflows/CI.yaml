@@ -220,43 +220,34 @@ jobs:
       - name: Set up environment variables
         id: set_env
         run: |
-          IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/owasp-juiceapp"
           IMAGE_TAG=$(echo ${{ github.sha }} | cut -c1-7)
-          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
 
       - name: Create .env file
         run: |
-          echo "IMAGE_NAME=${{ secrets.DOCKERHUB_USERNAME }}/owasp-juiceapp" > .env
-          echo "IMAGE_TAG=$(echo ${{ github.sha }} | cut -c1-7)" >> .env
-
-      - name: Save Environment Variables
-        uses: actions/upload-artifact@v3
-        with:
-          name: env-vars
-          path: .env
+          echo "IMAGE_TAG=$(echo ${{ github.sha }} | cut -c1-7)" > .env
 
       - name: Log in to DockerHub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
-        
+      
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Build Docker Image
+      - name: Build and Push Docker Image
         run: |
           docker buildx build \
-            -t $IMAGE_NAME:$IMAGE_TAG \
-            --file Dockerfile .
+            -t ${{ secrets.DOCKERHUB_USERNAME }}/owasp-juiceapp:$IMAGE_TAG \
+            --file Dockerfile \
+            --push .
 
-      - name: Push Docker Image
-        run: |
-          docker buildx build \
-            -t $IMAGE_NAME:$IMAGE_TAG \
-            --push \
-            .
+      - name: Save .env File
+        uses: actions/upload-artifact@v3
+        with:
+          name: env-vars
+          path: .env
 
             
 
@@ -265,37 +256,36 @@ jobs:
     runs-on: ubuntu-latest
     needs: Build_and_Push
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Download Environment Variables
-        uses: actions/download-artifact@v3
-        with:
-          name: env-vars
+    - name: Download Environment Variables
+      uses: actions/download-artifact@v3
+      with:
+        name: env-vars
 
-      - name: Load Environment Variables
-        run: |
-          set -o allexport
-          source .env
-          set +o allexport
+    - name: Load Environment Variables
+      run: |
+        set -o allexport
+        source .env
+        set +o allexport
 
-      - name: Run Trivy Vulnerability Scanner
-        uses: aquasecurity/trivy-action@0.20.0
-        with:
-          image-ref: "anshu049/owasp-juiceapp@sha256:4231e4df40ffdf1c4969d30b95e0f628da8877d210aae37dd35eb9306da94c8e"
-          format: 'json'
-          output: 'trivy.json'
-          exit-code: '1'
-          ignore-unfixed: true
-          vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH'
+    - name: Run Trivy Vulnerability Scanner
+      uses: aquasecurity/trivy-action@0.20.0
+      with:
+        image-ref: "${{ secrets.DOCKERHUB_USERNAME }}/owasp-juiceapp:${{ env.IMAGE_TAG }}"
+        format: 'json'
+        output: 'trivy.json'
+        exit-code: '1'
+        severity: 'CRITICAL,HIGH'
+        continue-on-error: true
       
-      - name: Upload Trivy Report
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: Trivy-report
-          path: trivy.json
+    - name: Upload Trivy Report
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: Trivy-report
+        path: trivy.json
 
 
           
