@@ -197,7 +197,7 @@ jobs:
 
       - name: Run Retire.js Scan
         run: |
-          retire --path . --outputformat json --outputpath retire.json || true
+          retire --path . --outputformat json --outputpath retirejsscan.json || true
         continue-on-error: true
 
       - name: Upload Retire.js Report
