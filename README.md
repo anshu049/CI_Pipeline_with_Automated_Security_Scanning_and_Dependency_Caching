@@ -1,6 +1,8 @@
 # CI Workflow
 
-This repository contains a comprehensive Continuous Integration (CI) workflow designed to automate the testing, security scanning, and report generation for Node.js applications. The workflow uses GitHub Actions to streamline the development process and ensure code quality through a series of automated steps.
+This repository contains a comprehensive Continuous Integration (CI) workflow designed to automate the testing, security scanning, and report generation for Node.js applications.
+
+The pipeline integrates several OWASP tools to enhance the security and reliability of the application.
 
 ![Screenshot 2024-08-20 at 3 34 41 AM](https://github.com/user-attachments/assets/f98f7c43-678c-491a-acfb-262fcefb5ff1)
 
