@@ -106,7 +106,7 @@ jobs:
 
     - name: Upload Gitleaks Report
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: Gitleaks-report
         path: gitleaks.json
@@ -131,7 +131,7 @@ jobs:
 
     - name: Upload SARIF report
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: Nodejsscan-report
         path: nodejsscan.sarif
@@ -155,7 +155,7 @@ jobs:
 
       - name: Upload Semgrep Report
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Semgrep-report
           path: semgrep.json
@@ -198,7 +198,7 @@ jobs:
 
       - name: Upload Retire.js Report
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Retirejsscan-report
           path: retirejsscan.json    
@@ -246,7 +246,7 @@ jobs:
       
       - name: Upload Trivy Report
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Trivy-report
           path: trivy.json
